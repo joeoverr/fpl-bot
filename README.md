@@ -1,6 +1,8 @@
 # FPL Bot
 
-An AI desktop assistant for Fantasy Premier League. It pulls live stats, prices, fixtures and your squad from the official FPL API, then answers questions using a local AI model, so it doesn't invent facts.
+An AI desktop assistant for Fantasy Premier League. It pulls live stats, prices, fixtures and your squad from the official FPL API, then answers questions using a local AI model, so its answers are based on real data.
+
+![FPL Bot desktop app showing gameweek recommendations](screenshot.png)
 
 ## Features
 - Loads any FPL team by team ID
