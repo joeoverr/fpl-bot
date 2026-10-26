@@ -1,3 +1,4 @@
+import re
 import threading
 import requests
 import ollama
@@ -40,6 +41,17 @@ def build_system(team_id):
             "Fixture difficulty runs from 1 (easy) to 5 (hard).\n\n"
             f"MY TEAM:\n{my_team}\n\nTOP PLAYERS:\n{options}")
 
+def clean_markdown(text):
+    # The chat box can't show bold, so strip the markdown symbols instead
+    text = re.sub(r"^[ \t]*([*_-])([ \t]*\1){2,}[ \t]*$", "", text, flags=re.MULTILINE)  # --- rules
+    text = re.sub(r"^[ \t]*#{1,6}[ \t]*", "", text, flags=re.MULTILINE)                  # # headings
+    text = re.sub(r"^([ \t]*)[*+-][ \t]+", r"\1• ", text, flags=re.MULTILINE)             # bullets
+    text = re.sub(r"`([^`\n]+)`", r"\1", text)                                           # `code`
+    text = re.sub(r"\[([^\]\n]+)\]\(([^)\n]+)\)", r"\1 (\2)", text)                      # [links](url)
+    text = re.sub(r"(\*{1,3}|_{2,3})(?=\S)(.+?)(?<=\S)\1", r"\2", text)                  # *, **, ***, __, ___
+    text = re.sub(r"(?<!\w)_(?=\S)(.+?)(?<=\S)_(?!\w)", r"\1", text)                     # _italic_
+    return text.replace("*", "")                                                         # any stray stars left
+
 def add_message(sender, text):
     chat.configure(state="normal")
     chat.insert("end", f"{sender}\n{text}\n\n")
@@ -62,7 +74,7 @@ def load_team():
     threading.Thread(target=work, daemon=True).start()
 
 def finish(answer):
-    add_message("FPL Bot", answer)
+    add_message("FPL Bot", clean_markdown(answer))
     send_button.configure(state="normal", text="Send")
 
 def send(event=None):
