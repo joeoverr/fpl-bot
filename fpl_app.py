@@ -73,8 +73,23 @@ def load_team():
             app.after(0, add_message, "FPL Bot", "Couldn't load that team. Check the ID and your internet.")
     threading.Thread(target=work, daemon=True).start()
 
+def start_reply():
+    # Remember where the reply begins so it can be redrawn as each word arrives
+    global reply_start
+    chat.configure(state="normal")
+    chat.insert("end", "FPL Bot\n")
+    reply_start = chat.index("end-1c")
+    chat.configure(state="disabled")
+
+def show_reply(text):
+    chat.configure(state="normal")
+    chat.delete(reply_start, "end-1c")
+    chat.insert("end", f"{clean_markdown(text)}\n\n")
+    chat.configure(state="disabled")
+    chat.see("end")
+
 def finish(answer):
-    add_message("FPL Bot", clean_markdown(answer))
+    show_reply(answer)
     send_button.configure(state="normal", text="Send")
 
 def send(event=None):
@@ -88,10 +103,13 @@ def send(event=None):
     add_message("You", question)
     send_button.configure(state="disabled", text="Thinking...")
     messages.append({"role": "user", "content": question})
+    start_reply()
     def work():
+        answer = ""
         try:
-            response = ollama.chat(model="llama3.1:8b", messages=messages, options={"num_ctx": 8192})
-            answer = response["message"]["content"]
+            for chunk in ollama.chat(model="llama3.1:8b", messages=messages, options={"num_ctx": 8192}, stream=True):
+                answer += chunk["message"]["content"]
+                app.after(0, show_reply, answer)
             messages.append({"role": "assistant", "content": answer})
         except Exception:
             answer = "Couldn't reach the AI. Is Ollama running?"
